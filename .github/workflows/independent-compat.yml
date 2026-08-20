@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ritikrikm/ScenarioMesh
-          ref: test/external-compatibility
+          ref: agent/mvp-runtime
           path: ScenarioMesh
       - name: Install ScenarioMesh
         working-directory: ScenarioMesh
