@@ -2,6 +2,7 @@
 import collections
 import pathlib
 import re
+import subprocess
 import sys
 
 if len(sys.argv) != 2:
@@ -59,5 +60,19 @@ if errors:
     for error in errors:
         print(" - " + error)
     raise SystemExit(1)
+
+# ScenarioMesh-owned CI lanes always tee Maven output here. Native baseline does not,
+# so this automatically strengthens ScenarioMesh runs without changing baseline semantics.
+scenariomesh_log = pathlib.Path("target/scenariomesh-maven.log")
+if scenariomesh_log.is_file():
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/validate_scenariomesh_run.py",
+            str(scenariomesh_log),
+            str(expected_count),
+        ],
+        check=True,
+    )
 
 print("VALIDATION: PASS")
