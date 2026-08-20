@@ -51,10 +51,6 @@
         <version>3.5.3</version>
         <configuration>
           <useModulePath>false</useModulePath>
-          <systemPropertyVariables>
-            <cucumber.plugin>json:target/cucumber.json</cucumber.plugin>
-            <fixture.executionDir>target/fixture-executions</fixture.executionDir>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>
