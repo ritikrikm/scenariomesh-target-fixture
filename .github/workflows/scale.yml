@@ -1,0 +1,71 @@
+name: ScenarioMesh Scale Suite
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenariomesh_ref:
+        description: ScenarioMesh branch/tag/SHA
+        required: true
+        default: agent/worker-hardening-test
+      workers:
+        description: Worker count
+        required: true
+        default: '8'
+
+jobs:
+  scale:
+    name: Scale / ${{ matrix.scenarios }} scenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        scenarios: [1000, 5000, 10000]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: target-fixture
+      - uses: actions/checkout@v4
+        with:
+          repository: ritikrikm/ScenarioMesh
+          ref: ${{ inputs.scenariomesh_ref }}
+          path: ScenarioMesh
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build ScenarioMesh
+        working-directory: ScenarioMesh
+        run: mvn -B -ntp clean install
+      - name: Generate scale workload
+        working-directory: target-fixture
+        run: |
+          python3 scripts/generate_scenarios.py '${{ matrix.scenarios }}'
+          python3 scripts/set_workers.py '${{ inputs.workers }}'
+      - name: Run normal target command under ScenarioMesh
+        working-directory: target-fixture
+        run: |
+          rm -rf target/fixture-executions target/scenariomesh
+          mkdir -p target
+          mvn -B -ntp test -Dfixture.browser.enabled=false | tee target/scenariomesh-maven.log
+      - name: Assert takeover
+        working-directory: target-fixture
+        run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log
+      - name: Validate exact-once execution
+        working-directory: target-fixture
+        run: python3 scripts/validate_execution.py '${{ matrix.scenarios }}'
+      - name: Capture summary
+        if: always()
+        working-directory: target-fixture
+        run: |
+          echo "## ScenarioMesh ${{ matrix.scenarios }}-scenario scale run" >> "$GITHUB_STEP_SUMMARY"
+          grep -E 'ScenarioMesh results:|ScenarioMesh selected adapter:|ScenarioMesh: takeover enabled' target/scenariomesh-maven.log >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scale-${{ matrix.scenarios }}-w${{ inputs.workers }}
+          path: |
+            target-fixture/target/scenariomesh-maven.log
+            target-fixture/target/scenariomesh/**
+          if-no-files-found: warn
