@@ -10,11 +10,11 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Base64;
 import java.util.UUID;
 
 public final class FixtureSteps {
@@ -35,7 +35,8 @@ public final class FixtureSteps {
         String html = "<html><body><input id='value'/><button id='submit' " +
                 "onclick=\"document.getElementById('result').textContent=document.getElementById('value').value\">" +
                 "Submit</button><div id='result'></div></body></html>";
-        driver.get("data:text/html;charset=utf-8," + URLEncoder.encode(html, StandardCharsets.UTF_8));
+        String encoded = Base64.getEncoder().encodeToString(html.getBytes(StandardCharsets.UTF_8));
+        driver.get("data:text/html;base64," + encoded);
     }
 
     @When("the scenario writes its unique id")
