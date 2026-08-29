@@ -48,7 +48,7 @@ jobs:
         run: |
           rm -rf target/fixture-executions target/scenariomesh
           mkdir -p target
-          mvn -B -ntp test -Dfixture.browser.enabled=false | tee target/scenariomesh-maven.log
+          mvn -B -ntp test -Dfixture.browser.mode=none | tee target/scenariomesh-maven.log
       - name: Assert takeover
         working-directory: target-fixture
         run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log

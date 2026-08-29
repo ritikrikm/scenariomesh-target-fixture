@@ -85,13 +85,13 @@ jobs:
         include:
           - scenarios: 4
             workers: 1
-            browser: true
+            browserMode: chrome-headless
           - scenarios: 4
             workers: 4
-            browser: true
+            browserMode: chrome-headless
           - scenarios: 100
             workers: 4
-            browser: false
+            browserMode: none
     steps:
       - name: Checkout target fixture
         uses: actions/checkout@v4
@@ -123,7 +123,7 @@ jobs:
         run: |
           rm -rf target/fixture-executions target/scenariomesh
           mkdir -p target
-          mvn -B -ntp test -Dfixture.browser.enabled='${{ matrix.browser }}' | tee target/scenariomesh-maven.log
+          mvn -B -ntp test -Dfixture.browser.mode='${{ matrix.browserMode }}' | tee target/scenariomesh-maven.log
       - name: Prove ScenarioMesh took ownership
         working-directory: target-fixture
         run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log
@@ -176,7 +176,7 @@ jobs:
         run: |
           mkdir -p target
           mvn -B -ntp test \
-            -Dfixture.browser.enabled=false \
+            -Dfixture.browser.mode=none \
             -Dfixture.crash.once.id=scenario-00007 \
             | tee target/scenariomesh-maven.log
       - name: Prove takeover and retry/replacement
@@ -234,7 +234,12 @@ jobs:
         run: |
           rm -rf target/fixture-executions target/scenariomesh
           mkdir -p target
-          mvn -B -ntp test -Dfixture.browser.enabled="$FIXTURE_BROWSER_ENABLED" | tee target/scenariomesh-maven.log
+          if [ "$FIXTURE_BROWSER_ENABLED" = "true" ]; then
+            FIXTURE_BROWSER_MODE=chrome-headless
+          else
+            FIXTURE_BROWSER_MODE=none
+          fi
+          mvn -B -ntp test -Dfixture.browser.mode="$FIXTURE_BROWSER_MODE" | tee target/scenariomesh-maven.log
       - name: Prove takeover
         working-directory: target-fixture
         run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log

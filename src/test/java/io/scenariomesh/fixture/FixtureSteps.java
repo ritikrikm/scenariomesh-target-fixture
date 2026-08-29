@@ -8,12 +8,15 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.net.URI;
+import java.net.URL;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -28,9 +31,7 @@ public final class FixtureSteps {
         if (!browserEnabled()) {
             return;
         }
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--window-size=1280,720");
-        driver = new ChromeDriver(options);
+        driver = createDriver();
 
         String html = "<html><body><input id='value'/><button id='submit' " +
                 "onclick=\"document.getElementById('result').textContent=document.getElementById('value').value\">" +
@@ -92,7 +93,60 @@ public final class FixtureSteps {
     }
 
     private static boolean browserEnabled() {
-        return Boolean.parseBoolean(System.getProperty("fixture.browser.enabled", "true"));
+        return browserMode() != BrowserMode.NONE;
+    }
+
+    private WebDriver createDriver() {
+        BrowserMode mode = browserMode();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--window-size=1280,720");
+        switch (mode) {
+            case NONE -> throw new IllegalStateException("Browser driver requested while fixture.browser.mode=none");
+            case CHROME_HEADLESS -> {
+                options.addArguments("--headless=new");
+                return new ChromeDriver(options);
+            }
+            case CHROME_HEADED -> {
+                return new ChromeDriver(options);
+            }
+            case REMOTE -> {
+                String remote = System.getProperty("fixture.webdriver.remote.url", "").trim();
+                if (remote.isEmpty()) {
+                    throw new IllegalStateException("fixture.webdriver.remote.url must be set when fixture.browser.mode=remote");
+                }
+                try {
+                    URL url = URI.create(remote).toURL();
+                    return new RemoteWebDriver(url, options);
+                } catch (Exception exception) {
+                    throw new IllegalStateException("Could not create remote WebDriver for " + remote, exception);
+                }
+            }
+            default -> throw new IllegalStateException("Unsupported browser mode: " + mode);
+        }
+    }
+
+    private static BrowserMode browserMode() {
+        String explicit = System.getProperty("fixture.browser.mode", "").trim().toLowerCase(java.util.Locale.ROOT);
+        if (!explicit.isEmpty()) {
+            return switch (explicit) {
+                case "none", "off", "disabled" -> BrowserMode.NONE;
+                case "chrome-headless", "headless", "chrome" -> BrowserMode.CHROME_HEADLESS;
+                case "chrome-headed", "headed" -> BrowserMode.CHROME_HEADED;
+                case "remote", "remote-webdriver", "grid" -> BrowserMode.REMOTE;
+                default -> throw new IllegalArgumentException("Unknown fixture.browser.mode: " + explicit);
+            };
+        }
+        if (!Boolean.parseBoolean(System.getProperty("fixture.browser.enabled", "true"))) {
+            return BrowserMode.NONE;
+        }
+        return BrowserMode.CHROME_HEADLESS;
+    }
+
+    private enum BrowserMode {
+        NONE,
+        CHROME_HEADLESS,
+        CHROME_HEADED,
+        REMOTE
     }
 
     @After

@@ -2,7 +2,21 @@
 
 This repository is a controlled external consumer used to verify ScenarioMesh against a real Maven + Cucumber + Selenium project.
 
-The target project intentionally stays small in source code while scaling the number of executable Cucumber examples dynamically. This lets CI exercise ScenarioMesh discovery, Maven takeover, isolated workers, scheduling, reporting, exact-once execution, and worker recovery at sizes from a handful of scenarios to 10,000.
+The target project intentionally stays small in source code while scaling the number of executable Cucumber examples dynamically. This lets CI exercise ScenarioMesh discovery, Maven takeover, isolated workers, scheduling, reporting, exact-once execution, worker recovery, and browser-driver behavior at sizes from a handful of scenarios to 10,000.
+
+## Fixture branch matrix
+
+The repository already keeps several purpose-built branches so ScenarioMesh can be exercised against different real-world shapes instead of a single toy lane:
+
+- `main` - baseline target fixture and developer default
+- `test/small-scale` - low-count smoke lane with real browser interaction
+- `test/medium-scale` - scale lane with browser disabled to focus on scheduling and exact-once accounting
+- `test/high-scale-5000` - large load lane for scheduler and worker lifecycle stress
+- `test/controlled-contract` - contract lane for takeover-safe Maven/Cucumber/Selenium behavior
+- `test/browser-driver-matrix` - browser-driver lane for local headed/headless and remote WebDriver runs
+- `test/hostile-compatibility` - pass-through and negative-compatibility lane
+
+Those branch names can stay stable while the workflow inputs vary scenario count, browser mode, worker count, and failure behavior.
 
 ## Default ScenarioMesh source
 
@@ -54,6 +68,17 @@ python3 scripts/generate_scenarios.py 10000
 ```
 
 For small compatibility runs, each scenario launches headless Chrome and interacts with an isolated Base64 in-memory HTML page. Large scale runs disable the browser workload so they stress ScenarioMesh discovery, scheduling, IPC, worker lifecycle, and reporting rather than Chrome startup cost.
+
+### Browser driver modes
+
+The fixture supports multiple browser-driver shapes through `fixture.browser.mode`:
+
+- `chrome-headless` - local headless Chrome, the default CI path
+- `chrome-headed` - local visible Chrome for interactive debugging
+- `remote` - Selenium RemoteWebDriver, useful for Selenium Grid or hosted browser lanes
+- `none` - browserless execution for scale and contract lanes
+
+`fixture.browser.enabled=false` is still accepted as a backward-compatible alias for `fixture.browser.mode=none`.
 
 The core worker test intentionally avoids a shared Cucumber JSON output file because several isolated JVMs writing the same file would test Cucumber reporter contention instead of ScenarioMesh execution correctness. ScenarioMesh's own reports are the authoritative aggregate artifacts for these lanes.
 
