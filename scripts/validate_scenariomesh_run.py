@@ -24,11 +24,18 @@ def main() -> None:
 
     text = log_path.read_text(encoding="utf-8", errors="replace")
 
-    takeover = "ScenarioMesh: takeover enabled for scenariomesh-target-fixture"
-    if takeover not in text:
+    takeover_markers = (
+        "ScenarioMesh: takeover enabled after runtime ownership preflight.",
+        "ScenarioMesh: takeover enabled for scenariomesh-target-fixture",
+    )
+    if not any(marker in text for marker in takeover_markers):
         fail("ScenarioMesh takeover log was not found")
 
-    if "ScenarioMesh: pass-through for scenariomesh-target-fixture" in text:
+    pass_through_markers = (
+        "ScenarioMesh: pass-through for scenariomesh-target-fixture",
+        "runtime preflight selected native Maven pass-through",
+    )
+    if any(marker in text for marker in pass_through_markers):
         fail("target unexpectedly entered ScenarioMesh pass-through mode")
 
     adapter_matches = re.findall(r"ScenarioMesh selected adapter:\s*([^\r\n]+)", text)

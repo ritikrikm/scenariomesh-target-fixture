@@ -6,7 +6,7 @@ on:
       scenariomesh_ref:
         description: ScenarioMesh branch/tag/SHA
         required: true
-        default: agent/worker-hardening-test
+        default: main
       workers:
         description: Worker count
         required: true

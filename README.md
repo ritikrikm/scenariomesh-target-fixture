@@ -4,19 +4,9 @@ This repository is a controlled external consumer used to verify ScenarioMesh ag
 
 The target project intentionally stays small in source code while scaling the number of executable Cucumber examples dynamically. This lets CI exercise ScenarioMesh discovery, Maven takeover, isolated workers, scheduling, reporting, exact-once execution, worker recovery, and browser-driver behavior at sizes from a handful of scenarios to 10,000.
 
-## Fixture branch matrix
+## Fixture test matrix
 
-The repository already keeps several purpose-built branches so ScenarioMesh can be exercised against different real-world shapes instead of a single toy lane:
-
-- `main` - baseline target fixture and developer default
-- `test/small-scale` - low-count smoke lane with real browser interaction
-- `test/medium-scale` - scale lane with browser disabled to focus on scheduling and exact-once accounting
-- `test/high-scale-5000` - large load lane for scheduler and worker lifecycle stress
-- `test/controlled-contract` - contract lane for takeover-safe Maven/Cucumber/Selenium behavior
-- `test/browser-driver-matrix` - browser-driver lane for local headed/headless and remote WebDriver runs
-- `test/hostile-compatibility` - pass-through and negative-compatibility lane
-
-Those branch names can stay stable while the workflow inputs vary scenario count, browser mode, worker count, and failure behavior.
+The `main` branch is the single source of truth. Its workflows exercise several real-world shapes instead of maintaining divergent long-lived fixture branches: low-count browser smoke, browserless scale, exact-once accounting, worker recovery, controlled takeover, and hostile compatibility cases. Workflow inputs vary scenario count, browser mode, worker count, and failure behavior.
 
 ## Default ScenarioMesh source
 
@@ -24,7 +14,7 @@ GitHub Actions builds ScenarioMesh from:
 
 ```text
 ritikrikm/ScenarioMesh
-agent/worker-hardening-test
+main
 ```
 
 The ref can be overridden for manual workflow runs so feature branches or exact SHAs can be tested before merge.
