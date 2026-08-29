@@ -173,7 +173,9 @@ jobs:
           rm -rf target/fixture-executions target/fixture-crash-sentinels target/scenariomesh
       - name: Kill one worker once during a scenario
         working-directory: target-fixture
+        shell: bash
         run: |
+          set -o pipefail
           mkdir -p target
           mvn -B -ntp test \
             -Dfixture.browser.mode=none \
