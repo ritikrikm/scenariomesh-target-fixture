@@ -84,7 +84,9 @@ When `target/scenariomesh-maven.log` exists, that validator also invokes `valida
 
 ## Worker crash recovery
 
-The E2E workflow intentionally terminates one worker JVM while `scenario-00007` is running. A filesystem sentinel ensures only the first attempt crashes. With `execution.infrastructureRetries: 1`, ScenarioMesh is expected to detect the worker loss, requeue the unfinished scenario, start a replacement worker, retry the scenario, and finish with only successful terminal results.
+The E2E workflow intentionally terminates one worker JVM before the first scenario (`scenario-00001`) completes. A filesystem sentinel ensures only the first attempt crashes. With `execution.infrastructureRetries: 1`, ScenarioMesh is expected to detect the worker loss, requeue the unfinished work, start a replacement worker, and finish with exactly one completion marker per scenario.
+
+This lane proves recovery from worker loss before observable scenario completion. It does not claim transactional exactly-once side effects after an arbitrary mid-container crash: Cucumber scenario outlines can be dispatched as one container, and infrastructure retry is consequently at-least-once for side effects already produced inside that container. Applications that require such guarantees must make external side effects idempotent or transactional.
 
 ## Workflows
 
