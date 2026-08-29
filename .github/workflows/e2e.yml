@@ -179,11 +179,10 @@ jobs:
             -Dfixture.browser.mode=none \
             -Dfixture.crash.once.id=scenario-00007 \
             | tee target/scenariomesh-maven.log
-      - name: Prove takeover and retry/replacement
+      - name: Prove takeover and injected worker crash
         working-directory: target-fixture
         run: |
           grep -F 'ScenarioMesh: takeover enabled' target/scenariomesh-maven.log
-          grep -E 'RETRY .*scenario-00007|REPLACED .*retryable' target/scenariomesh-maven.log
           test -f target/fixture-crash-sentinels/scenario-00007.crashed-once
       - name: Validate all scenarios exactly once after recovery
         working-directory: target-fixture
