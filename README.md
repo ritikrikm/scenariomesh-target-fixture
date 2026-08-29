@@ -82,11 +82,11 @@ python3 scripts/validate_execution.py 100
 
 When `target/scenariomesh-maven.log` exists, that validator also invokes `validate_scenariomesh_run.py`, so the same command validates takeover, adapter selection, discovered/pass counts, and ScenarioMesh report publication.
 
-## Worker crash recovery
+## Worker crash containment
 
-The E2E workflow intentionally terminates one worker JVM before the first scenario (`scenario-00001`) completes. A filesystem sentinel ensures only the first attempt crashes. With `execution.infrastructureRetries: 1`, ScenarioMesh is expected to detect the worker loss, requeue the unfinished work, start a replacement worker, and finish with exactly one completion marker per scenario.
+The E2E workflow intentionally terminates one worker JVM before the first scenario (`scenario-00001`) completes. A filesystem sentinel proves the injected crash occurred. ScenarioMesh is expected to detect the worker loss, fail the lifecycle-scoped Cucumber work unit, and avoid silently retrying it.
 
-This lane proves recovery from worker loss before observable scenario completion. It does not claim transactional exactly-once side effects after an arbitrary mid-container crash: Cucumber scenario outlines can be dispatched as one container, and infrastructure retry is consequently at-least-once for side effects already produced inside that container. Applications that require such guarantees must make external side effects idempotent or transactional.
+This conservative behavior prevents ScenarioMesh from duplicating unknown browser, database, or service side effects after an arbitrary mid-container crash. Infrastructure retry remains at-least-once and is used only where retry safety is established; applications that require broader retry guarantees must make external side effects idempotent or transactional.
 
 ## Workflows
 

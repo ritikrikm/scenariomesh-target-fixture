@@ -144,7 +144,7 @@ jobs:
           if-no-files-found: warn
 
   crash-recovery:
-    name: Pre-execution worker crash / requeue
+    name: Scoped worker crash / safe containment
     needs: scenariomesh-smoke
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -171,24 +171,32 @@ jobs:
           python3 scripts/generate_scenarios.py 20
           python3 scripts/set_workers.py 4
           rm -rf target/fixture-executions target/fixture-crash-sentinels target/scenariomesh
-      - name: Kill one worker once during a scenario
+      - name: Kill one worker once during a lifecycle-scoped run
         working-directory: target-fixture
         shell: bash
         run: |
           set -o pipefail
           mkdir -p target
+          set +e
           mvn -B -ntp test \
             -Dfixture.browser.mode=none \
             -Dfixture.crash.once.id=scenario-00001 \
             | tee target/scenariomesh-maven.log
-      - name: Prove takeover and injected worker crash
+          maven_status=${PIPESTATUS[0]}
+          set -e
+          test "$maven_status" -ne 0
+      - name: Prove takeover, crash detection, and no unsafe retry
         working-directory: target-fixture
         run: |
           grep -F 'ScenarioMesh: takeover enabled' target/scenariomesh-maven.log
           test -f target/fixture-crash-sentinels/scenario-00001.crashed-once
-      - name: Validate all scenarios exactly once after recovery
-        working-directory: target-fixture
-        run: python3 scripts/validate_execution.py 20
+          grep -F 'WORKER_FAILURE' target/scenariomesh/summary.json
+          test "$(grep -Fc 'WORKER_FAILURE' target/scenariomesh/summary.json)" -eq 20
+          if grep -Fq 'RETRY cucumber-junit-platform scope' target/scenariomesh-maven.log; then
+            echo 'Lifecycle-scoped Cucumber work was retried without a proven side-effect safety contract'
+            exit 1
+          fi
+          test ! -d target/fixture-executions
       - if: always()
         uses: actions/upload-artifact@v4
         with:
