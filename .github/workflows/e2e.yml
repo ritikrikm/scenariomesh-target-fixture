@@ -126,7 +126,7 @@ jobs:
           mvn -B -ntp test -Dfixture.browser.mode='${{ matrix.browserMode }}' | tee target/scenariomesh-maven.log
       - name: Prove ScenarioMesh took ownership
         working-directory: target-fixture
-        run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log
+        run: "grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log"
       - name: Validate exact-once execution
         working-directory: target-fixture
         run: python3 scripts/validate_execution.py '${{ matrix.scenarios }}'
@@ -242,7 +242,7 @@ jobs:
           mvn -B -ntp test -Dfixture.browser.mode="$FIXTURE_BROWSER_MODE" | tee target/scenariomesh-maven.log
       - name: Prove takeover
         working-directory: target-fixture
-        run: grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log
+        run: "grep -F 'ScenarioMesh: takeover enabled for scenariomesh-target-fixture' target/scenariomesh-maven.log"
       - name: Validate exact-once
         working-directory: target-fixture
         run: python3 scripts/validate_execution.py '${{ inputs.scenarios }}'
